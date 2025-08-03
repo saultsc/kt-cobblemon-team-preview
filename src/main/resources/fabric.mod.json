@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "team_preview",
+  "version": "${version}",
+  "name": "Cobblemon: Team Preview",
+  "description": "A mod for Cobblemon that allows players to preview their teams.",
+  "authors": [
+    "saultsc"
+  ],
+  "license": "MIT License",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.cobblemon.saultsc.team_preview.TeamPreview"
+    ],
+    "client": [
+      "com.cobblemon.saultsc.team_preview.TeamPreviewClient"
+    ]
+  },
+  "mixins": [
+    "team_preview.mixin.json"
+  ],
+  "depends": {
+    "minecraft": "1.21.1",
+    "fabric-api": ">=0.116.1",
+    "cobblemon": ">=1.6.1"
+  }
+}
