@@ -10,104 +10,36 @@ import com.cobblemon.mod.common.client.gui.drawProfilePokemon
 import com.cobblemon.mod.common.client.render.drawScaledText
 import com.cobblemon.mod.common.client.render.getDepletableRedGreen
 import com.cobblemon.mod.common.client.render.models.blockbench.FloatingState
-import com.cobblemon.mod.common.client.render.renderScaledGuiItemIcon
 import com.cobblemon.mod.common.pokemon.Gender
 import com.cobblemon.mod.common.pokemon.Pokemon
 import com.cobblemon.mod.common.util.cobblemonResource
 import com.cobblemon.mod.common.util.lang
 import com.cobblemon.mod.common.util.math.fromEulerXYZDegrees
 import net.minecraft.client.MinecraftClient
-
-
 import net.minecraft.client.gui.DrawContext
-import net.minecraft.client.gui.screen.Screen
-import net.minecraft.text.Text
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
-class TeamPreviewScreen(
-  private val opponentTeam: List<Pair<ShowdownPokemon, Pokemon>>
-) : Screen(Text.literal("team_preview_screen")) {
-
-  companion object {
-    const val SLOT_HORIZONTAL_SPACING = 4F
-    const val SLOT_VERTICAL_SPACING = 2F
-    const val BACKGROUND_HEIGHT = 148
-    val underlayTexture = cobblemonResource("textures/gui/battle/selection_underlay.png")
-  }
-
+/**
+ * Un componente que renderiza la lista de Pokémon de un equipo rival.
+ * No gestiona el fondo ni elementos interactivos, solo muestra los tiles de los Pokémon.
+ */
+class RivalTeamDisplay(
+  private val opponentTeam: List<Pair<ShowdownPokemon, Pokemon>>,
+  private val getSlotPosition: (Int) -> Pair<Float, Float>
+) {
   private val tiles = mutableListOf<TeamPreviewTile>()
 
-  override fun init() {
+  fun init() {
     tiles.clear()
-
     opponentTeam.forEachIndexed { index, (showdownPokemon, pokemon) ->
       val (slotX, slotY) = getSlotPosition(index)
       tiles.add(TeamPreviewTile(slotX, slotY, pokemon, showdownPokemon))
     }
   }
 
-  private fun getSlotPosition(index: Int): Pair<Float, Float> {
-    val startX = ((width / 2) - TeamPreviewTile.TILE_WIDTH - 1)
-    val startY = 34
-    val row = index / 2
-    val column = index % 2
-    val slotX = startX.toFloat() + column * (SLOT_HORIZONTAL_SPACING + TeamPreviewTile.TILE_WIDTH)
-    val slotY = startY.toFloat() + row * (SLOT_VERTICAL_SPACING + TeamPreviewTile.TILE_HEIGHT)
-    return Pair(slotX, slotY)
-  }
-
-  override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
-    super.render(context, mouseX, mouseY, delta)
-
-    val matrixStack = context.matrices
-
-    // Renderizar fondo
-    blitk(
-      matrixStack = matrixStack,
-      texture = underlayTexture,
-      x = 0,
-      y = 0,
-      width = width,
-      height = BACKGROUND_HEIGHT
-    )
-
-    // Título
-    val titleText = lang("ui.party")
-    val textWidth = textRenderer.getWidth(titleText)
-    drawScaledText(
-      context = context,
-      text = titleText,
-      x = (width - textWidth) / 2,
-      y = 17,
-      shadow = true
-    )
-
-    // Renderizar slots vacíos
-    for (index in 0 until 6) {
-      val (slotX, slotY) = getSlotPosition(index)
-      blitk(
-        matrixStack = matrixStack,
-        texture = TeamPreviewTile.tileDisabledTexture,
-        x = slotX,
-        y = slotY,
-        width = TeamPreviewTile.TILE_WIDTH,
-        height = TeamPreviewTile.TILE_HEIGHT - 7,
-        vOffset = TeamPreviewTile.TILE_HEIGHT,
-        textureHeight = TeamPreviewTile.TILE_HEIGHT * 2,
-      )
-    }
-
-    // Renderizar Pokémon
+  fun render(context: DrawContext, delta: Float) {
     tiles.forEach { it.render(context, delta) }
-  }
-
-  override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
-//    if (keyCode == 256) { // ESC key
-//      close()
-//      return true
-//    }
-    return super.keyPressed(keyCode, scanCode, modifiers)
   }
 
   class TeamPreviewTile(
@@ -120,7 +52,6 @@ class TeamPreviewScreen(
       const val TILE_WIDTH = 94
       const val TILE_HEIGHT = 29
       const val SCALE = 0.5F
-      val tileTexture = cobblemonResource("textures/gui/battle/party_select.png")
       val tileDisabledTexture = cobblemonResource("textures/gui/battle/party_select_disabled.png")
     }
 
@@ -134,18 +65,18 @@ class TeamPreviewScreen(
       val (hp, maxHp) = if (healthRatioSplits.size == 1) 0 to 0
       else healthRatioSplits[0].toInt() to pokemon.maxHealth
 
-      val hpRatio = hp / maxHp.toFloat()
+      val hpRatio = if (maxHp > 0) hp / maxHp.toFloat() else 0f
       val isFainted = "fnt" in showdownPokemon.condition
 
-      // Renderizar tile base
+      // Renderizar tile base deshabilitado
       blitk(
         matrixStack = matrixStack,
-        texture = tileTexture,
+        texture = tileDisabledTexture,
         x = x,
         y = y,
         width = TILE_WIDTH,
         height = TILE_HEIGHT,
-        vOffset = 0,
+        vOffset = TILE_HEIGHT,
         textureHeight = TILE_HEIGHT * 2,
       )
 
@@ -204,18 +135,6 @@ class TeamPreviewScreen(
       matrixStack.push()
       matrixStack.translate(0.0, 0.0, 100.0)
 
-//      This ui no aplly show item because the is party rival
-//      val heldItem = pokemon.heldItem().copy()
-//      if (!heldItem.isEmpty) {
-//        renderScaledGuiItemIcon(
-//          matrixStack = matrixStack,
-//          itemStack = heldItem,
-//          x = x + 81.0,
-//          y = y + 11.0,
-//          scale = 0.5
-//        )
-//      }
-
       val textOpacity = if (isFainted) 0.7F else 1F
 
       // Level
@@ -253,7 +172,8 @@ class TeamPreviewScreen(
       // Género
       val gender = pokemon.gender
       if (gender != Gender.GENDERLESS) {
-        val pokemonDisplayNameWidth = MinecraftClient.getInstance().textRenderer.getWidth(displayText.font(CobblemonResources.DEFAULT_LARGE))
+        val pokemonDisplayNameWidth =
+          MinecraftClient.getInstance().textRenderer.getWidth(displayText.font(CobblemonResources.DEFAULT_LARGE))
         val isMale = gender == Gender.MALE
         val textSymbol = if (isMale) "♂".text().bold() else "♀".text().bold()
         drawScaledText(
@@ -270,7 +190,7 @@ class TeamPreviewScreen(
 
       // Barra de HP
       val barWidthMax = 90
-      val barWidth = hpRatio * barWidthMax
+      val barWidth = (hpRatio * barWidthMax).toInt()
       val (red, green) = getDepletableRedGreen(hpRatio)
 
       blitk(
@@ -280,8 +200,6 @@ class TeamPreviewScreen(
         y = y + 22,
         width = barWidth,
         height = 1,
-        textureWidth = barWidth / hpRatio,
-        uOffset = barWidthMax - barWidth,
         red = red * 0.8F,
         green = green * 0.8F,
         blue = 0.27F
