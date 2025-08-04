@@ -181,11 +181,39 @@ class BattlePreview(
 
   private fun renderTimer(context: DrawContext) {
     val centerX = width / 2f
-    val timerY = backgroundY + BACKGROUND_HEIGHT + 20f
+    val timerY = backgroundY + BACKGROUND_HEIGHT + 5f // Subir los textos (era +20f)
 
     when (currentPhase) {
       BattleTimerUpdatePacket.TimerPhase.SELECTION -> {
-        val timerText = Text.literal("Tiempo para seleccionar: ${formatTime(selectionTimeRemaining)}")
+        // Texto de instrucciones
+        val instructionText = if (hasSelectedPokemon) {
+          Text.literal("Waiting for the rival").formatted(Formatting.YELLOW)
+        } else {
+          Text.literal("Select a Pokemon to Start").formatted(Formatting.WHITE)
+        }
+
+        val instructionWidth = textRenderer.getWidth(instructionText)
+        drawScaledText(
+          context = context,
+          text = instructionText,
+          x = centerX - (instructionWidth / 2f),
+          y = timerY,
+          shadow = true
+        )
+
+        // Etiqueta "Time Remaining"
+        val timeLabel = Text.literal("Time Remaining").formatted(Formatting.GRAY)
+        val timeLabelWidth = textRenderer.getWidth(timeLabel)
+        drawScaledText(
+          context = context,
+          text = timeLabel,
+          x = centerX - (timeLabelWidth / 2f),
+          y = timerY + 15f,
+          shadow = true
+        )
+
+        // Tiempo numérico debajo - más separado
+        val timerText = Text.literal(formatTime(selectionTimeRemaining))
           .formatted(if (selectionTimeRemaining <= 10) Formatting.RED else Formatting.WHITE)
 
         val timerWidth = textRenderer.getWidth(timerText)
@@ -193,33 +221,35 @@ class BattlePreview(
           context = context,
           text = timerText,
           x = centerX - (timerWidth / 2f),
+          y = timerY + 30f, // Más separación (era +25f)
+          shadow = true
+        )
+      }
+
+      BattleTimerUpdatePacket.TimerPhase.PRE_START -> {
+        // NO mostrar "Waiting for la rival" en esta fase
+
+        // Etiqueta "Start in"
+        val startLabel = Text.literal("Start in").formatted(Formatting.GREEN)
+        val startLabelWidth = textRenderer.getWidth(startLabel)
+        drawScaledText(
+          context = context,
+          text = startLabel,
+          x = centerX - (startLabelWidth / 2f),
           y = timerY,
           shadow = true
         )
 
-        if (hasSelectedPokemon) {
-          val waitingText = Text.literal("Esperando al oponente...").formatted(Formatting.YELLOW)
-          val waitingWidth = textRenderer.getWidth(waitingText)
-          drawScaledText(
-            context = context,
-            text = waitingText,
-            x = centerX - (waitingWidth / 2f),
-            y = timerY + 15f,
-            shadow = true
-          )
-        }
-      }
-
-      BattleTimerUpdatePacket.TimerPhase.PRE_START -> {
-        val startText = Text.literal("¡La batalla comenzará en: ${formatTime(preStartTimeRemaining)}!")
+        // Tiempo numérico debajo - más separado
+        val timerText = Text.literal(formatTime(preStartTimeRemaining))
           .formatted(Formatting.GREEN)
 
-        val startWidth = textRenderer.getWidth(startText)
+        val timerWidth = textRenderer.getWidth(timerText)
         drawScaledText(
           context = context,
-          text = startText,
-          x = centerX - (startWidth / 2f),
-          y = timerY,
+          text = timerText,
+          x = centerX - (timerWidth / 2f),
+          y = timerY + 20f, // Más separación (era +25f)
           shadow = true
         )
       }
