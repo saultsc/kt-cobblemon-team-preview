@@ -181,7 +181,8 @@ class BattlePreview(
 
   private fun renderTimer(context: DrawContext) {
     val centerX = width / 2f
-    val timerY = backgroundY + 138f
+    val instructionY = backgroundY + 138f
+    val timerDisplayY = instructionY + 25f // Mueve el temporizador hacia abajo
 
     when (currentPhase) {
       BattleTimerUpdatePacket.TimerPhase.SELECTION -> {
@@ -197,7 +198,7 @@ class BattlePreview(
           context = context,
           text = instructionText,
           x = centerX - (instructionWidth / 2f),
-          y = timerY,
+          y = instructionY,
           shadow = true
         )
 
@@ -208,7 +209,7 @@ class BattlePreview(
           context = context,
           text = timeLabel,
           x = centerX - (timeLabelWidth / 2f),
-          y = timerY + 12f,
+          y = timerDisplayY,
           shadow = true
         )
 
@@ -221,7 +222,7 @@ class BattlePreview(
           context = context,
           text = timerText,
           x = centerX - (timerWidth / 2f),
-          y = timerY + 22f, // Más separación (era +25f)
+          y = timerDisplayY + 12f,
           shadow = true
         )
       }
@@ -233,7 +234,7 @@ class BattlePreview(
           context = context,
           text = startLabel,
           x = centerX - (startLabelWidth / 2f),
-          y = timerY,
+          y = timerDisplayY,
           shadow = true
         )
 
@@ -245,7 +246,7 @@ class BattlePreview(
           context = context,
           text = timerText,
           x = centerX - (timerWidth / 2f),
-          y = timerY + 12f, // Más separación (era +25f)
+          y = timerDisplayY + 12f,
           shadow = true
         )
       }
@@ -257,7 +258,6 @@ class BattlePreview(
   }
 
   override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
-    // Solo permitir clics durante la fase de selección
     if (currentPhase == BattleTimerUpdatePacket.TimerPhase.SELECTION && !hasSelectedPokemon) {
       if (playerTeamSelector.mouseClicked(mouseX, mouseY)) {
         return true
