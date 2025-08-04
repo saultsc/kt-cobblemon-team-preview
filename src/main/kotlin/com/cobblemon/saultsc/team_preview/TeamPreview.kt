@@ -1,7 +1,7 @@
 package com.cobblemon.saultsc.team_preview
 
 import com.cobblemon.saultsc.team_preview.client.gui.battle.BattlePreview
-import com.cobblemon.saultsc.team_preview.network.battle.BattlePreviewPacket
+import com.cobblemon.saultsc.team_preview.network.battle.s2c.BattlePreviewPacket
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry

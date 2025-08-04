@@ -3,7 +3,7 @@ package com.cobblemon.saultsc.team_preview.mixins
 import com.cobblemon.mod.common.Cobblemon
 import com.cobblemon.mod.common.battles.ChallengeManager
 import com.cobblemon.mod.common.battles.ShowdownPokemon
-import com.cobblemon.saultsc.team_preview.network.battle.BattlePreviewPacket
+import com.cobblemon.saultsc.team_preview.network.battle.s2c.BattlePreviewPacket
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At
