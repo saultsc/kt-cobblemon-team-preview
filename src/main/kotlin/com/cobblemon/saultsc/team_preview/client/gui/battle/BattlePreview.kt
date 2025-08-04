@@ -132,7 +132,7 @@ class BattlePreview(
     )
 
     // Renderiza los slots del equipo del jugador (izquierda)
-    for (i in 0 until playerTeam.size) {
+    for (i in 0 until 6) {
       val (playerX, playerY) = getPlayerSlotPosition(i)
       blitk(
         matrixStack = matrixStack,
@@ -141,7 +141,7 @@ class BattlePreview(
         y = playerY,
         width = PlayerTeamSelector.PlayerTeamTile.TILE_WIDTH,
         height = PlayerTeamSelector.PlayerTeamTile.TILE_HEIGHT,
-        vOffset = 0,
+        vOffset = PlayerTeamSelector.PlayerTeamTile.TILE_HEIGHT,
         textureHeight = PlayerTeamSelector.PlayerTeamTile.TILE_HEIGHT * 2,
       )
     }
@@ -158,7 +158,7 @@ class BattlePreview(
       shadow = true
     )
     // Renderiza los slots del equipo rival (derecha)
-    for (i in 0 until opponentTeam.size) {
+    for (i in 0 until 6) {
       val (rivalX, rivalY) = getRivalSlotPosition(i)
       blitk(
         matrixStack = matrixStack,
@@ -167,7 +167,7 @@ class BattlePreview(
         y = rivalY,
         width = RivalTeamDisplay.TeamPreviewTile.TILE_WIDTH,
         height = RivalTeamDisplay.TeamPreviewTile.TILE_HEIGHT,
-        vOffset = 0,
+        vOffset = RivalTeamDisplay.TeamPreviewTile.TILE_HEIGHT,
         textureHeight = RivalTeamDisplay.TeamPreviewTile.TILE_HEIGHT * 2,
       )
     }
@@ -181,11 +181,11 @@ class BattlePreview(
 
   private fun renderTimer(context: DrawContext) {
     val centerX = width / 2f
-    val timerY = backgroundY + BACKGROUND_HEIGHT + 5f // Subir los textos (era +20f)
+    val timerY = backgroundY + 138f
 
     when (currentPhase) {
       BattleTimerUpdatePacket.TimerPhase.SELECTION -> {
-        // Texto de instrucciones
+
         val instructionText = if (hasSelectedPokemon) {
           Text.literal("Waiting for the rival").formatted(Formatting.YELLOW)
         } else {
@@ -208,7 +208,7 @@ class BattlePreview(
           context = context,
           text = timeLabel,
           x = centerX - (timeLabelWidth / 2f),
-          y = timerY + 15f,
+          y = timerY + 12f,
           shadow = true
         )
 
@@ -221,15 +221,12 @@ class BattlePreview(
           context = context,
           text = timerText,
           x = centerX - (timerWidth / 2f),
-          y = timerY + 30f, // Más separación (era +25f)
+          y = timerY + 22f, // Más separación (era +25f)
           shadow = true
         )
       }
 
       BattleTimerUpdatePacket.TimerPhase.PRE_START -> {
-        // NO mostrar "Waiting for la rival" en esta fase
-
-        // Etiqueta "Start in"
         val startLabel = Text.literal("Start in").formatted(Formatting.GREEN)
         val startLabelWidth = textRenderer.getWidth(startLabel)
         drawScaledText(
@@ -240,7 +237,6 @@ class BattlePreview(
           shadow = true
         )
 
-        // Tiempo numérico debajo - más separado
         val timerText = Text.literal(formatTime(preStartTimeRemaining))
           .formatted(Formatting.GREEN)
 
@@ -249,13 +245,13 @@ class BattlePreview(
           context = context,
           text = timerText,
           x = centerX - (timerWidth / 2f),
-          y = timerY + 20f, // Más separación (era +25f)
+          y = timerY + 12f, // Más separación (era +25f)
           shadow = true
         )
       }
 
       BattleTimerUpdatePacket.TimerPhase.FINISHED -> {
-        // La pantalla se cerrará automáticamente
+
       }
     }
   }

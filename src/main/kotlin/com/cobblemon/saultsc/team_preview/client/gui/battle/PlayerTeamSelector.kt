@@ -94,7 +94,7 @@ class PlayerTeamSelector(
                 y = y,
                 width = TILE_WIDTH,
                 height = TILE_HEIGHT,
-                vOffset = if (!isFainted && !isSelected && isHovered(mouseX, mouseY)) 0 else TILE_HEIGHT,
+                vOffset = if (isFainted) 0 else if (!isSelected && isHovered(mouseX, mouseY)) 0 else TILE_HEIGHT,
                 textureHeight = TILE_HEIGHT * 2,
             )
 

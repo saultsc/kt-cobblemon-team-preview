@@ -76,7 +76,7 @@ class RivalTeamDisplay(
         y = y,
         width = TILE_WIDTH,
         height = TILE_HEIGHT,
-        vOffset = TILE_HEIGHT,
+        vOffset = if (isFainted) 0 else TILE_HEIGHT,
         textureHeight = TILE_HEIGHT * 2,
       )
 
