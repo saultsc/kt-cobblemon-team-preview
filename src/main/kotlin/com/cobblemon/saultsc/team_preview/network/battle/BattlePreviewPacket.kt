@@ -9,7 +9,9 @@ import net.minecraft.network.packet.CustomPayload
 
 data class BattlePreviewPacket(
   val playerTeam: List<Pair<ShowdownPokemon, Pokemon>>,
+  val playerName: String,
   val opponentTeam: List<Pair<ShowdownPokemon, Pokemon>>,
+  val opponentName: String
 ) : CustomPayload {
 
   override fun getId(): CustomPayload.Id<*> = ID
@@ -26,12 +28,18 @@ data class BattlePreviewPacket(
     private fun write(buf: RegistryByteBuf, packet: BattlePreviewPacket) {
       writeTeam(buf, packet.playerTeam)
       writeTeam(buf, packet.opponentTeam)
+      buf.writeString(packet.playerName)
+      buf.writeString(packet.opponentName)
     }
 
     private fun read(buf: RegistryByteBuf): BattlePreviewPacket {
       val playerTeam = readTeam(buf)
       val opponentTeam = readTeam(buf)
-      return BattlePreviewPacket(playerTeam, opponentTeam)
+
+      val playerName = buf.readString()
+      val opponentName = buf.readString()
+
+      return BattlePreviewPacket(playerTeam, playerName, opponentTeam, opponentName)
     }
 
     private fun writeTeam(buf: RegistryByteBuf, team: List<Pair<ShowdownPokemon, Pokemon>>) {

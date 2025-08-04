@@ -12,7 +12,9 @@ import net.minecraft.text.Text
 
 class BattlePreview(
   private val opponentTeam: List<Pair<ShowdownPokemon, Pokemon>>,
-  private val playerTeam: List<Pair<ShowdownPokemon, Pokemon>>
+  private val opponentName: String,
+  private val playerTeam: List<Pair<ShowdownPokemon, Pokemon>>,
+  private val playerName: String
 ) : Screen(Text.literal("battle_preview")) {
 
   companion object {
@@ -76,6 +78,18 @@ class BattlePreview(
 
 
 
+    val playerTeamTotalWidth = (PlayerTeamSelector.PlayerTeamTile.TILE_WIDTH * 2) + SLOT_HORIZONTAL_SPACING
+    val playerTeamStartX = (width / 2f) - playerTeamTotalWidth - 20
+    val playerTitle = Text.literal("$playerName's ").append(lang("ui.party"))
+    val playerTitleWidth = textRenderer.getWidth(playerTitle)
+    drawScaledText(
+      context = context,
+      text = playerTitle,
+      x = playerTeamStartX + (playerTeamTotalWidth / 2) - (playerTitleWidth / 2f),
+      y = backgroundY + 17f,
+      shadow = true
+    )
+
     // Renderiza los slots del equipo del jugador (izquierda)
     for (i in 0 until playerTeam.size) {
       val (playerX, playerY) = getPlayerSlotPosition(i)
@@ -91,6 +105,17 @@ class BattlePreview(
       )
     }
 
+    val rivalTeamTotalWidth = (RivalTeamDisplay.TeamPreviewTile.TILE_WIDTH * 2) + SLOT_HORIZONTAL_SPACING
+    val rivalTeamStartX = (width / 2f) + 20
+    val opponentTitle = Text.literal("$opponentName's ").append(lang("ui.party"))
+    val opponentTitleWidth = textRenderer.getWidth(opponentTitle)
+    drawScaledText(
+      context = context,
+      text = opponentTitle,
+      x = rivalTeamStartX + (rivalTeamTotalWidth / 2) - (opponentTitleWidth / 2f),
+      y = backgroundY + 17f,
+      shadow = true
+    )
     // Renderiza los slots del equipo rival (derecha)
     for (i in 0 until opponentTeam.size) {
       val (rivalX, rivalY) = getRivalSlotPosition(i)

@@ -6,11 +6,12 @@ import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 
 class TeamPreviewClient : ClientModInitializer {
-    override fun onInitializeClient() {
-        ClientPlayNetworking.registerGlobalReceiver(BattlePreviewPacket.ID) { payload, context ->
-            context.client().execute {
-                context.client().setScreen(BattlePreview(payload.opponentTeam, payload.playerTeam))
-            }
-        }
+  override fun onInitializeClient() {
+    ClientPlayNetworking.registerGlobalReceiver(BattlePreviewPacket.ID) { payload, context ->
+      context.client().execute {
+        context.client()
+          .setScreen(BattlePreview(payload.opponentTeam, payload.opponentName, payload.playerTeam, payload.playerName))
+      }
     }
+  }
 }
