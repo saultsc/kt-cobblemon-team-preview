@@ -6,8 +6,10 @@ import com.cobblemon.saultsc.team_preview.TeamPreview
 import net.minecraft.network.RegistryByteBuf
 import net.minecraft.network.codec.PacketCodec
 import net.minecraft.network.packet.CustomPayload
+import java.util.*
 
 data class BattlePreviewPacket(
+  val battleId: UUID,
   val playerTeam: List<Pair<ShowdownPokemon, Pokemon>>,
   val playerName: String,
   val opponentTeam: List<Pair<ShowdownPokemon, Pokemon>>,
@@ -26,6 +28,7 @@ data class BattlePreviewPacket(
     )
 
     private fun write(buf: RegistryByteBuf, packet: BattlePreviewPacket) {
+      buf.writeUuid(packet.battleId)
       writeTeam(buf, packet.playerTeam)
       writeTeam(buf, packet.opponentTeam)
       buf.writeString(packet.playerName)
@@ -33,13 +36,14 @@ data class BattlePreviewPacket(
     }
 
     private fun read(buf: RegistryByteBuf): BattlePreviewPacket {
+      val battleId = buf.readUuid()
       val playerTeam = readTeam(buf)
       val opponentTeam = readTeam(buf)
 
       val playerName = buf.readString()
       val opponentName = buf.readString()
 
-      return BattlePreviewPacket(playerTeam, playerName, opponentTeam, opponentName)
+      return BattlePreviewPacket(battleId, playerTeam, playerName, opponentTeam, opponentName)
     }
 
     private fun writeTeam(buf: RegistryByteBuf, team: List<Pair<ShowdownPokemon, Pokemon>>) {

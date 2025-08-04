@@ -23,7 +23,8 @@ import org.joml.Vector3f
 
 class PlayerTeamSelector(
     private val playerTeam: List<Pair<ShowdownPokemon, Pokemon>>,
-    private val getSlotPosition: (Int) -> Pair<Float, Float>
+    private val getSlotPosition: (Int) -> Pair<Float, Float>,
+    private val onPokemonSelected: (Int) -> Unit = {} // Callback para cuando se selecciona un pokémon
 ) {
     val tiles = mutableListOf<PlayerTeamTile>()
     var selectedPokemon: Pokemon? = null
@@ -34,7 +35,7 @@ class PlayerTeamSelector(
         playerTeam.forEachIndexed { index, (showdownPokemon, pokemon) ->
             val (slotX, slotY) = getSlotPosition(index)
             val isFainted = "fnt" in showdownPokemon.condition
-            tiles.add(PlayerTeamTile(this, slotX, slotY, pokemon, showdownPokemon, isFainted))
+            tiles.add(PlayerTeamTile(this, slotX, slotY, pokemon, showdownPokemon, isFainted, index))
         }
     }
 
@@ -45,11 +46,8 @@ class PlayerTeamSelector(
     fun mouseClicked(mouseX: Double, mouseY: Double): Boolean {
         val clickedTile = tiles.find { it.isHovered(mouseX, mouseY) && !it.isFainted }
         if (clickedTile != null) {
-            selectedPokemon = if (selectedPokemon == clickedTile.pokemon) {
-                null // Deseleccionar si se hace clic de nuevo
-            } else {
-                clickedTile.pokemon // Seleccionar nuevo
-            }
+            selectedPokemon = clickedTile.pokemon
+            onPokemonSelected(clickedTile.index) // Llamar callback con el índice
             return true
         }
         return false
@@ -61,7 +59,8 @@ class PlayerTeamSelector(
         private val y: Float,
         val pokemon: Pokemon,
         private val showdownPokemon: ShowdownPokemon,
-        val isFainted: Boolean
+        val isFainted: Boolean,
+        val index: Int // Agregar índice para identificar el pokémon
     ) {
         companion object {
             const val TILE_WIDTH = 94

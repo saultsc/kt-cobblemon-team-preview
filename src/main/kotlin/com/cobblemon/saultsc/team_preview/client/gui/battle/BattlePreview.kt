@@ -6,11 +6,17 @@ import com.cobblemon.mod.common.client.render.drawScaledText
 import com.cobblemon.mod.common.pokemon.Pokemon
 import com.cobblemon.mod.common.util.cobblemonResource
 import com.cobblemon.mod.common.util.lang
+import com.cobblemon.saultsc.team_preview.network.battle.s2c.PokemonSelectionPacket
+import com.cobblemon.saultsc.team_preview.network.battle.s2c.BattleTimerUpdatePacket
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.minecraft.client.gui.DrawContext
 import net.minecraft.client.gui.screen.Screen
 import net.minecraft.text.Text
+import net.minecraft.util.Formatting
+import java.util.*
 
 class BattlePreview(
+  private val battleId: UUID,
   private val opponentTeam: List<Pair<ShowdownPokemon, Pokemon>>,
   private val opponentName: String,
   private val playerTeam: List<Pair<ShowdownPokemon, Pokemon>>,
@@ -28,6 +34,12 @@ class BattlePreview(
   private lateinit var playerTeamSelector: PlayerTeamSelector
   private var backgroundY: Int = 0
 
+  // Timer variables - ahora usando el battleId del servidor
+  private var selectionTimeRemaining: Int = 30
+  private var preStartTimeRemaining: Int = 5
+  private var currentPhase: BattleTimerUpdatePacket.TimerPhase = BattleTimerUpdatePacket.TimerPhase.SELECTION
+  private var hasSelectedPokemon: Boolean = false
+
   override fun init() {
     super.init()
     backgroundY = if (this.height > 304) (this.height / 2) - (BACKGROUND_HEIGHT / 2)
@@ -36,8 +48,39 @@ class BattlePreview(
     rivalTeamDisplay = RivalTeamDisplay(opponentTeam, this::getRivalSlotPosition)
     rivalTeamDisplay.init()
 
-    playerTeamSelector = PlayerTeamSelector(playerTeam, this::getPlayerSlotPosition)
+    playerTeamSelector = PlayerTeamSelector(playerTeam, this::getPlayerSlotPosition, this::onPokemonSelected)
     playerTeamSelector.init()
+  }
+
+  private fun onPokemonSelected(selectedIndex: Int) {
+    if (currentPhase == BattleTimerUpdatePacket.TimerPhase.SELECTION && !hasSelectedPokemon) {
+      hasSelectedPokemon = true
+      // Enviar selección al servidor
+      val packet = PokemonSelectionPacket(battleId, selectedIndex)
+      ClientPlayNetworking.send(packet)
+    }
+  }
+
+  fun updateTimer(timerUpdate: BattleTimerUpdatePacket) {
+    // Solo actualizar si el battleId coincide con el de esta pantalla
+    if (this.battleId != timerUpdate.battleId) {
+      return // Ignorar actualizaciones de otras batallas
+    }
+
+    this.selectionTimeRemaining = timerUpdate.selectionTimeRemaining
+    this.preStartTimeRemaining = timerUpdate.preStartTimeRemaining
+    this.currentPhase = timerUpdate.phase
+
+    // Si la fase cambió a FINISHED, cerrar la pantalla
+    if (currentPhase == BattleTimerUpdatePacket.TimerPhase.FINISHED) {
+      close()
+    }
+  }
+
+  private fun formatTime(seconds: Int): String {
+    val minutes = seconds / 60
+    val remainingSeconds = seconds % 60
+    return String.format("%d:%02d", minutes, remainingSeconds)
   }
 
   // Corregido: La posición del equipo del jugador se ha movido más a la izquierda.
@@ -75,8 +118,6 @@ class BattlePreview(
       width = width,
       height = BACKGROUND_HEIGHT
     )
-
-
 
     val playerTeamTotalWidth = (PlayerTeamSelector.PlayerTeamTile.TILE_WIDTH * 2) + SLOT_HORIZONTAL_SPACING
     val playerTeamStartX = (width / 2f) - playerTeamTotalWidth - 20
@@ -133,11 +174,68 @@ class BattlePreview(
 
     playerTeamSelector.render(context, mouseX, mouseY, delta)
     rivalTeamDisplay.render(context, delta)
+
+
+    renderTimer(context)
+  }
+
+  private fun renderTimer(context: DrawContext) {
+    val centerX = width / 2f
+    val timerY = backgroundY + BACKGROUND_HEIGHT + 20f
+
+    when (currentPhase) {
+      BattleTimerUpdatePacket.TimerPhase.SELECTION -> {
+        val timerText = Text.literal("Tiempo para seleccionar: ${formatTime(selectionTimeRemaining)}")
+          .formatted(if (selectionTimeRemaining <= 10) Formatting.RED else Formatting.WHITE)
+
+        val timerWidth = textRenderer.getWidth(timerText)
+        drawScaledText(
+          context = context,
+          text = timerText,
+          x = centerX - (timerWidth / 2f),
+          y = timerY,
+          shadow = true
+        )
+
+        if (hasSelectedPokemon) {
+          val waitingText = Text.literal("Esperando al oponente...").formatted(Formatting.YELLOW)
+          val waitingWidth = textRenderer.getWidth(waitingText)
+          drawScaledText(
+            context = context,
+            text = waitingText,
+            x = centerX - (waitingWidth / 2f),
+            y = timerY + 15f,
+            shadow = true
+          )
+        }
+      }
+
+      BattleTimerUpdatePacket.TimerPhase.PRE_START -> {
+        val startText = Text.literal("¡La batalla comenzará en: ${formatTime(preStartTimeRemaining)}!")
+          .formatted(Formatting.GREEN)
+
+        val startWidth = textRenderer.getWidth(startText)
+        drawScaledText(
+          context = context,
+          text = startText,
+          x = centerX - (startWidth / 2f),
+          y = timerY,
+          shadow = true
+        )
+      }
+
+      BattleTimerUpdatePacket.TimerPhase.FINISHED -> {
+        // La pantalla se cerrará automáticamente
+      }
+    }
   }
 
   override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
-    if (playerTeamSelector.mouseClicked(mouseX, mouseY)) {
-      return true
+    // Solo permitir clics durante la fase de selección
+    if (currentPhase == BattleTimerUpdatePacket.TimerPhase.SELECTION && !hasSelectedPokemon) {
+      if (playerTeamSelector.mouseClicked(mouseX, mouseY)) {
+        return true
+      }
     }
     return super.mouseClicked(mouseX, mouseY, button)
   }
