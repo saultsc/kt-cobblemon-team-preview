@@ -15,50 +15,64 @@ import java.util.*
 @Mixin(ChallengeManager::class, remap = false)
 class BattleScreenMixin {
 
-  @Inject(method = ["onAccept"], at = [At("HEAD")], cancellable = true)
-  private fun onAcceptInject(challenge: ChallengeManager.BattleChallenge, ci: CallbackInfo) {
+    @Inject(method = ["onAccept"], at = [At("HEAD")], cancellable = true)
+    private fun onAcceptInject(challenge: ChallengeManager.BattleChallenge, ci: CallbackInfo) {
 
-    if(challenge !is ChallengeManager.SinglesBattleChallenge ) return
+        if (challenge !is ChallengeManager.SinglesBattleChallenge) return
 
-    ci.cancel()
+        ci.cancel()
 
-    val sender = challenge.sender
-    val receiver = challenge.receiver
+        val sender = challenge.sender
+        val receiver = challenge.receiver
 
-    val battleId = UUID.randomUUID()
+        val battleId = UUID.randomUUID()
 
-    BattlePreviewManager.INSTANCE.startBattlePreview(battleId, sender, receiver, challenge.battleFormat)
+        BattlePreviewManager.INSTANCE.startBattlePreview(battleId, sender, receiver, challenge.battleFormat)
 
-    val senderTeam = Cobblemon.storage.getParty(sender).map { pokemon ->
-      val condition = "${pokemon.currentHealth}/${pokemon.maxHealth}" + if (pokemon.isFainted()) " fnt" else ""
-      ShowdownPokemon().apply {
-        this.condition = condition
-        this.pokeball = pokemon.caughtBall.name.toString()
-      } to pokemon
+        val senderTeam = Cobblemon.storage.getParty(sender).map { pokemon ->
+            val battlePokemon = pokemon.clone()
+            if (challenge.battleFormat.adjustLevel > 1) battlePokemon.level = challenge.battleFormat.adjustLevel
+            if(battlePokemon.canBeHealed()) battlePokemon.heal()
+
+            val condition = "${battlePokemon.currentHealth}/${battlePokemon.maxHealth}" + if (battlePokemon.isFainted()) " fnt" else ""
+
+            ShowdownPokemon().apply {
+                this.condition = condition
+                this.pokeball = battlePokemon.caughtBall.name.toString()
+            } to battlePokemon
+        }
+
+        val receiverTeam = Cobblemon.storage.getParty(receiver).map { pokemon ->
+            val battlePokemon = pokemon.clone()
+            if (challenge.battleFormat.adjustLevel > 1) battlePokemon.level = challenge.battleFormat.adjustLevel
+            if(battlePokemon.canBeHealed()) battlePokemon.heal()
+
+            val condition = "${battlePokemon.currentHealth}/${battlePokemon.maxHealth}" + if (battlePokemon.isFainted()) " fnt" else ""
+
+            ShowdownPokemon().apply {
+                this.condition = condition
+                this.pokeball = battlePokemon.caughtBall.name.toString()
+            } to battlePokemon
+        }
+
+        ServerPlayNetworking.send(
+            sender, BattlePreviewPacket(
+                battleId = battleId,
+                playerTeam = senderTeam,
+                playerName = sender.name.string,
+                opponentTeam = receiverTeam,
+                opponentName = receiver.name.string
+            )
+        )
+
+        ServerPlayNetworking.send(
+            receiver, BattlePreviewPacket(
+                battleId = battleId,
+                playerTeam = receiverTeam,
+                playerName = receiver.name.string,
+                opponentTeam = senderTeam,
+                opponentName = sender.name.string
+            )
+        )
     }
-
-    val receiverTeam = Cobblemon.storage.getParty(receiver).map { pokemon ->
-      val condition = "${pokemon.currentHealth}/${pokemon.maxHealth}" + if (pokemon.isFainted()) " fnt" else ""
-      ShowdownPokemon().apply {
-        this.condition = condition
-        this.pokeball = pokemon.caughtBall.name.toString()
-      } to pokemon
-    }
-
-    ServerPlayNetworking.send(sender, BattlePreviewPacket(
-      battleId = battleId,
-      playerTeam = senderTeam,
-      playerName = sender.name.string,
-      opponentTeam = receiverTeam,
-      opponentName = receiver.name.string
-    ))
-
-    ServerPlayNetworking.send(receiver, BattlePreviewPacket(
-      battleId = battleId,
-      playerTeam = receiverTeam,
-      playerName = receiver.name.string,
-      opponentTeam = senderTeam,
-      opponentName = sender.name.string
-    ))
-  }
 }
