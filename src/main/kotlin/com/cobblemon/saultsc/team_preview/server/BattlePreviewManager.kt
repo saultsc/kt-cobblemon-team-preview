@@ -138,6 +138,7 @@ class BattlePreviewManager {
     private fun startBattle(session: BattleSession) {
         session.phase = BattleTimerUpdatePacket.TimerPhase.FINISHED
         session.isActive = false
+        sendTimerUpdate(session)
 
         // Cancelar cualquier timer que aún esté corriendo
         session.selectionTimerTask?.cancel(false)

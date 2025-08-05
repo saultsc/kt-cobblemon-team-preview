@@ -202,7 +202,6 @@ class BattlePreview(
           shadow = true
         )
 
-        // Etiqueta "Time Remaining"
         val timeLabel = Text.literal("Time Remaining").formatted(Formatting.GRAY)
         val timeLabelWidth = textRenderer.getWidth(timeLabel)
         drawScaledText(
@@ -213,7 +212,6 @@ class BattlePreview(
           shadow = true
         )
 
-        // Tiempo numérico debajo - más separado
         val timerText = Text.literal(formatTime(selectionTimeRemaining))
           .formatted(if (selectionTimeRemaining <= 10) Formatting.RED else Formatting.WHITE)
 
@@ -252,7 +250,7 @@ class BattlePreview(
       }
 
       BattleTimerUpdatePacket.TimerPhase.FINISHED -> {
-
+        // No se renderiza nada, la pantalla se cierra.
       }
     }
   }
