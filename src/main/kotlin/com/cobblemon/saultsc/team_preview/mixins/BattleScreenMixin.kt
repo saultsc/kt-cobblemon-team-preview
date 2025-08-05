@@ -17,7 +17,9 @@ class BattleScreenMixin {
 
   @Inject(method = ["onAccept"], at = [At("HEAD")], cancellable = true)
   private fun onAcceptInject(challenge: ChallengeManager.BattleChallenge, ci: CallbackInfo) {
-    // Cancelamos el evento original para manejarlo nosotros.
+
+    if(challenge !is ChallengeManager.SinglesBattleChallenge ) return
+
     ci.cancel()
 
     val sender = challenge.sender
