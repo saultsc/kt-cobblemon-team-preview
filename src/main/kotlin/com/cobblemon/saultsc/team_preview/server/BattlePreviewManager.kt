@@ -1,5 +1,10 @@
 package com.cobblemon.saultsc.team_preview.server
 
+import com.cobblemon.mod.common.Cobblemon
+import com.cobblemon.mod.common.battles.BattleBuilder
+import com.cobblemon.mod.common.battles.BattleFormat
+import com.cobblemon.mod.common.battles.BattleRegistry
+import com.cobblemon.mod.common.battles.BattleStartResult
 import com.cobblemon.saultsc.team_preview.network.battle.s2c.BattleTimerUpdatePacket
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.server.network.ServerPlayerEntity
@@ -25,8 +30,9 @@ class BattlePreviewManager {
         val battleId: UUID,
         val player1: ServerPlayerEntity,
         val player2: ServerPlayerEntity,
-        var player1Selection: Int? = null,
-        var player2Selection: Int? = null,
+        val battleFormat: BattleFormat,
+        var player1Selection: UUID? = null,
+        var player2Selection: UUID? = null,
         var selectionTimeRemaining: Int = SELECTION_TIME_LIMIT,
         var preStartTimeRemaining: Int = PRE_START_TIME_LIMIT,
         var phase: BattleTimerUpdatePacket.TimerPhase = BattleTimerUpdatePacket.TimerPhase.SELECTION,
@@ -35,8 +41,8 @@ class BattlePreviewManager {
         var preStartTimerTask: ScheduledFuture<*>? = null
     )
 
-    fun startBattlePreview(battleId: UUID, player1: ServerPlayerEntity, player2: ServerPlayerEntity) {
-        val session = BattleSession(battleId, player1, player2)
+    fun startBattlePreview(battleId: UUID, player1: ServerPlayerEntity, player2: ServerPlayerEntity, battleFormat: BattleFormat) {
+        val session = BattleSession(battleId, player1, player2, battleFormat)
         battleSessions[battleId] = session
 
         startSelectionTimer(session)
@@ -107,8 +113,14 @@ class BattlePreviewManager {
         if (session.phase != BattleTimerUpdatePacket.TimerPhase.SELECTION) return
 
         when (player) {
-            session.player1 -> session.player1Selection = selectedIndex
-            session.player2 -> session.player2Selection = selectedIndex
+            session.player1 -> {
+                val pokemon = Cobblemon.storage.getParty(player).get(selectedIndex)
+                session.player1Selection = pokemon?.uuid
+            }
+            session.player2 -> {
+                val pokemon = Cobblemon.storage.getParty(player).get(selectedIndex)
+                session.player2Selection = pokemon?.uuid
+            }
         }
 
         if (session.player1Selection != null && session.player2Selection != null) {
@@ -125,10 +137,10 @@ class BattlePreviewManager {
 
     private fun handleSelectionTimeout(session: BattleSession) {
         if (session.player1Selection == null) {
-            session.player1Selection = 0
+            session.player1Selection = Cobblemon.storage.getParty(session.player1).get(0)?.uuid
         }
         if (session.player2Selection == null) {
-            session.player2Selection = 0
+            session.player2Selection = Cobblemon.storage.getParty(session.player2).get(0)?.uuid
         }
 
         session.phase = BattleTimerUpdatePacket.TimerPhase.PRE_START
@@ -140,24 +152,23 @@ class BattlePreviewManager {
         session.isActive = false
         sendTimerUpdate(session)
 
-        // Cancelar cualquier timer que aún esté corriendo
         session.selectionTimerTask?.cancel(false)
         session.preStartTimerTask?.cancel(false)
 
-        // Aquí integrarías con el sistema de batalla de Cobblemon
-        // Pasando las selecciones de pokémon: session.player1Selection y session.player2Selection
+        val player1Pokemon = session.player1Selection?.let { Cobblemon.storage.getParty(session.player1).find { p -> p.uuid == it } }
+        val player2Pokemon = session.player2Selection?.let { Cobblemon.storage.getParty(session.player2).find { p -> p.uuid == it } }
 
-        // Ejemplo de cómo podrías iniciar la batalla con los pokémon seleccionados:
-        /*
-        val battle = BattleBuilder()
-            .leadPokemon(session.player1, session.player1Selection ?: 0)
-            .leadPokemon(session.player2, session.player2Selection ?: 0)
-            .start()
-        */
+        if (player1Pokemon != null && player2Pokemon != null) {
+            BattleBuilder.pvp1v1(
+                player1 = session.player1,
+                player2 = session.player2,
+                leadingPokemonPlayer1 = session.player1Selection,
+                leadingPokemonPlayer2 = session.player2Selection,
+                battleFormat = session.battleFormat
+            )
+        }
 
-        // Limpiar sesión
         battleSessions.remove(session.battleId)
-
     }
 
     fun cancelBattle(battleId: UUID) {
@@ -170,7 +181,7 @@ class BattlePreviewManager {
         }
     }
 
-    fun getPlayerSelection(battleId: UUID, player: ServerPlayerEntity): Int? {
+    fun getPlayerSelection(battleId: UUID, player: ServerPlayerEntity): UUID? {
         val session = battleSessions[battleId] ?: return null
         return when (player) {
             session.player1 -> session.player1Selection

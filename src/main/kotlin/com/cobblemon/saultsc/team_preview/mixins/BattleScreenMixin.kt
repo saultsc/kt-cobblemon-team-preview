@@ -25,7 +25,7 @@ class BattleScreenMixin {
 
     val battleId = UUID.randomUUID()
 
-    BattlePreviewManager.INSTANCE.startBattlePreview(battleId, sender, receiver)
+    BattlePreviewManager.INSTANCE.startBattlePreview(battleId, sender, receiver, challenge.battleFormat)
 
     val senderTeam = Cobblemon.storage.getParty(sender).map { pokemon ->
       val condition = "${pokemon.currentHealth}/${pokemon.maxHealth}" + if (pokemon.isFainted()) " fnt" else ""
