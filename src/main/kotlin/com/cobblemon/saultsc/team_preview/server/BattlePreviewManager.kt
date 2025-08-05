@@ -136,15 +136,12 @@ class BattlePreviewManager {
     }
 
     private fun handleSelectionTimeout(session: BattleSession) {
-        if (session.player1Selection == null) {
-            session.player1Selection = Cobblemon.storage.getParty(session.player1).get(0)?.uuid
+        if (session.player1Selection == null || session.player2Selection == null) {
+            cancelBattle(session.battleId)
+        } else {
+            session.phase = BattleTimerUpdatePacket.TimerPhase.PRE_START
+            startPreStartTimer(session)
         }
-        if (session.player2Selection == null) {
-            session.player2Selection = Cobblemon.storage.getParty(session.player2).get(0)?.uuid
-        }
-
-        session.phase = BattleTimerUpdatePacket.TimerPhase.PRE_START
-        startPreStartTimer(session)
     }
 
     private fun startBattle(session: BattleSession) {
@@ -175,6 +172,8 @@ class BattlePreviewManager {
         val session = battleSessions[battleId]
         if (session != null) {
             session.isActive = false
+            session.phase = BattleTimerUpdatePacket.TimerPhase.FINISHED
+            sendTimerUpdate(session)
             session.selectionTimerTask?.cancel(false)
             session.preStartTimerTask?.cancel(false)
             battleSessions.remove(battleId)

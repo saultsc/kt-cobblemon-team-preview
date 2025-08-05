@@ -39,6 +39,9 @@ class BattlePreview(
   private var preStartTimeRemaining: Int = 5
   private var currentPhase: BattleTimerUpdatePacket.TimerPhase = BattleTimerUpdatePacket.TimerPhase.SELECTION
   private var hasSelectedPokemon: Boolean = false
+  private var isFinished: Boolean = false
+
+  override fun shouldCloseOnEsc() = false
 
   override fun init() {
     super.init()
@@ -71,9 +74,8 @@ class BattlePreview(
     this.preStartTimeRemaining = timerUpdate.preStartTimeRemaining
     this.currentPhase = timerUpdate.phase
 
-    // Si la fase cambió a FINISHED, cerrar la pantalla
     if (currentPhase == BattleTimerUpdatePacket.TimerPhase.FINISHED) {
-      close()
+      isFinished = true
     }
   }
 
@@ -107,6 +109,10 @@ class BattlePreview(
   }
 
   override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
+    if (isFinished) {
+      client?.execute { close() }
+      return
+    }
     super.render(context, mouseX, mouseY, delta)
     val matrixStack = context.matrices
 
@@ -265,13 +271,6 @@ class BattlePreview(
   }
 
   override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
-    if (super.keyPressed(keyCode, scanCode, modifiers)) {
-      return true
-    }
-    if (client?.options?.inventoryKey?.matchesKey(keyCode, scanCode) == true) {
-      close()
-      return true
-    }
-    return false
+    return super.keyPressed(keyCode, scanCode, modifiers)
   }
 }
