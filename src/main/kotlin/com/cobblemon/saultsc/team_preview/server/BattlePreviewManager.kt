@@ -38,7 +38,8 @@ class BattlePreviewManager {
         var phase: BattleTimerUpdatePacket.TimerPhase = BattleTimerUpdatePacket.TimerPhase.SELECTION,
         var isActive: Boolean = true,
         var selectionTimerTask: ScheduledFuture<*>? = null,
-        var preStartTimerTask: ScheduledFuture<*>? = null
+        var preStartTimerTask: ScheduledFuture<*>? = null,
+        var winner: ServerPlayerEntity? = null
     )
 
     fun startBattlePreview(battleId: UUID, player1: ServerPlayerEntity, player2: ServerPlayerEntity, battleFormat: BattleFormat) {
@@ -130,28 +131,26 @@ class BattlePreviewManager {
             session.preStartTimeRemaining = PRE_START_TIME_LIMIT
 
             sendTimerUpdate(session)
-
             startPreStartTimer(session)
         }
     }
 
     private fun handleSelectionTimeout(session: BattleSession) {
-        if (session.player1Selection == null || session.player2Selection == null) {
-            cancelBattle(session.battleId)
+        val p1Selection = session.player1Selection
+        val p2Selection = session.player2Selection
+
+        if (p1Selection != null && p2Selection == null) {
+            session.winner = session.player1
+            endBattle(session)
+        } else if (p1Selection == null && p2Selection != null) {
+            session.winner = session.player2
+            endBattle(session)
         } else {
-            session.phase = BattleTimerUpdatePacket.TimerPhase.PRE_START
-            startPreStartTimer(session)
+            cancelBattle(session.battleId)
         }
     }
 
     private fun startBattle(session: BattleSession) {
-        session.phase = BattleTimerUpdatePacket.TimerPhase.FINISHED
-        session.isActive = false
-        sendTimerUpdate(session)
-
-        session.selectionTimerTask?.cancel(false)
-        session.preStartTimerTask?.cancel(false)
-
         val player1Pokemon = session.player1Selection?.let { Cobblemon.storage.getParty(session.player1).find { p -> p.uuid == it } }
         val player2Pokemon = session.player2Selection?.let { Cobblemon.storage.getParty(session.player2).find { p -> p.uuid == it } }
 
@@ -165,19 +164,23 @@ class BattlePreviewManager {
             )
         }
 
-        battleSessions.remove(session.battleId)
+        endBattle(session)
     }
 
     fun cancelBattle(battleId: UUID) {
         val session = battleSessions[battleId]
         if (session != null) {
-            session.isActive = false
-            session.phase = BattleTimerUpdatePacket.TimerPhase.FINISHED
-            sendTimerUpdate(session)
-            session.selectionTimerTask?.cancel(false)
-            session.preStartTimerTask?.cancel(false)
-            battleSessions.remove(battleId)
+            endBattle(session)
         }
+    }
+
+    private fun endBattle(session: BattleSession) {
+        session.isActive = false
+        session.phase = BattleTimerUpdatePacket.TimerPhase.FINISHED
+        sendTimerUpdate(session)
+        session.selectionTimerTask?.cancel(false)
+        session.preStartTimerTask?.cancel(false)
+        battleSessions.remove(session.battleId)
     }
 
     fun getPlayerSelection(battleId: UUID, player: ServerPlayerEntity): UUID? {
