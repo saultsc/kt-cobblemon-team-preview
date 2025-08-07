@@ -1,10 +1,13 @@
 package com.cobblemon.saultsc.team_preview.server
 
 import com.cobblemon.mod.common.Cobblemon
+import com.cobblemon.mod.common.api.battles.model.actor.BattleActor
 import com.cobblemon.mod.common.battles.BattleBuilder
 import com.cobblemon.mod.common.battles.BattleFormat
 import com.cobblemon.mod.common.battles.BattleRegistry
+import com.cobblemon.mod.common.battles.BattleSide
 import com.cobblemon.mod.common.battles.BattleStartResult
+import com.cobblemon.mod.common.battles.actor.PlayerBattleActor
 import com.cobblemon.saultsc.team_preview.network.battle.s2c.BattleTimerUpdatePacket
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.server.network.ServerPlayerEntity
@@ -131,6 +134,7 @@ class BattlePreviewManager {
             session.preStartTimeRemaining = PRE_START_TIME_LIMIT
 
             sendTimerUpdate(session)
+
             startPreStartTimer(session)
         }
     }
@@ -151,18 +155,24 @@ class BattlePreviewManager {
     }
 
     private fun startBattle(session: BattleSession) {
-        val player1Pokemon = session.player1Selection?.let { Cobblemon.storage.getParty(session.player1).find { p -> p.uuid == it } }
-        val player2Pokemon = session.player2Selection?.let { Cobblemon.storage.getParty(session.player2).find { p -> p.uuid == it } }
+        val player1BattleActor = Cobblemon.storage.getParty(session.player1)
+            .toBattleTeam()
+            .sortedBy { it.uuid != session.player1Selection }
+            .toMutableList()
 
-        if (player1Pokemon != null && player2Pokemon != null) {
-            BattleBuilder.pvp1v1(
-                player1 = session.player1,
-                player2 = session.player2,
-                leadingPokemonPlayer1 = session.player1Selection,
-                leadingPokemonPlayer2 = session.player2Selection,
-                battleFormat = session.battleFormat
-            )
-        }
+        val player2BattleActor = Cobblemon.storage.getParty(session.player2)
+            .toBattleTeam()
+            .sortedBy { it.uuid != session.player2Selection }
+            .toMutableList()
+
+        val actor1 = PlayerBattleActor(session.player1.uuid, player1BattleActor)
+        val actor2 = PlayerBattleActor(session.player2.uuid, player2BattleActor)
+
+        BattleRegistry.startBattle(
+            session.battleFormat,
+            BattleSide(actor1),
+            BattleSide(actor2)
+        )
 
         endBattle(session)
     }
@@ -178,9 +188,6 @@ class BattlePreviewManager {
         session.isActive = false
         session.phase = BattleTimerUpdatePacket.TimerPhase.FINISHED
         sendTimerUpdate(session)
-        session.selectionTimerTask?.cancel(false)
-        session.preStartTimerTask?.cancel(false)
-        battleSessions.remove(session.battleId)
     }
 
     fun getPlayerSelection(battleId: UUID, player: ServerPlayerEntity): UUID? {
