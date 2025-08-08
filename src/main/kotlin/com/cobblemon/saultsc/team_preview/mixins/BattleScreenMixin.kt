@@ -1,6 +1,8 @@
 package com.cobblemon.saultsc.team_preview.mixins
 
 import com.cobblemon.mod.common.Cobblemon
+import com.cobblemon.mod.common.battles.BattleType
+import com.cobblemon.mod.common.battles.BattleTypes
 import com.cobblemon.mod.common.battles.ChallengeManager
 import com.cobblemon.mod.common.battles.ShowdownPokemon
 import com.cobblemon.saultsc.team_preview.network.battle.s2c.BattlePreviewPacket
@@ -18,7 +20,9 @@ class BattleScreenMixin {
     @Inject(method = ["onAccept"], at = [At("HEAD")], cancellable = true)
     private fun onAcceptInject(challenge: ChallengeManager.BattleChallenge, ci: CallbackInfo) {
 
-        if (challenge !is ChallengeManager.SinglesBattleChallenge) return
+        when (challenge.battleFormat.battleType) {
+            BattleTypes.DOUBLES, BattleTypes.MULTI, BattleTypes.TRIPLES, BattleTypes.ROYAL -> return
+        }
 
         ci.cancel()
 
