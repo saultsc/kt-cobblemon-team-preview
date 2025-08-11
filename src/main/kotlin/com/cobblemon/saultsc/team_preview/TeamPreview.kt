@@ -5,7 +5,6 @@ import com.cobblemon.saultsc.team_preview.network.battle.s2c.BattleTimerUpdatePa
 import com.cobblemon.saultsc.team_preview.network.battle.s2c.PokemonSelectionPacket
 import com.cobblemon.saultsc.team_preview.server.BattlePreviewManager
 import net.fabricmc.api.ModInitializer
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.util.Identifier

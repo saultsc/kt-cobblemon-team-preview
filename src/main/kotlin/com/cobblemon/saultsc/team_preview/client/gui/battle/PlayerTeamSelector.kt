@@ -1,5 +1,6 @@
 package com.cobblemon.saultsc.team_preview.client.gui.battle
 
+import com.cobblemon.mod.common.CobblemonSounds
 import com.cobblemon.mod.common.api.gui.blitk
 import com.cobblemon.mod.common.api.text.bold
 import com.cobblemon.mod.common.api.text.font
@@ -18,6 +19,8 @@ import com.cobblemon.mod.common.util.lang
 import com.cobblemon.mod.common.util.math.fromEulerXYZDegrees
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gui.DrawContext
+import net.minecraft.client.sound.PositionedSoundInstance
+import net.minecraft.client.sound.SoundManager
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
@@ -48,12 +51,23 @@ class PlayerTeamSelector(
         if (clickedTile != null) {
             selectedPokemon = clickedTile.pokemon
             onPokemonSelected(clickedTile.index) // Llamar callback con el índice
+            playDownSound(MinecraftClient.getInstance().soundManager)
             return true
         }
         return false
     }
 
-    class PlayerTeamTile(
+    fun playDownSound(soundManager: SoundManager) {
+      soundManager.play(
+        PositionedSoundInstance.master(
+          CobblemonSounds.GUI_CLICK,
+          1.0F // pitch
+        )
+      )
+    }
+
+
+  class PlayerTeamTile(
         private val selector: PlayerTeamSelector,
         private val x: Float,
         private val y: Float,
