@@ -2,9 +2,12 @@
   "required": true,
   "package": "com.cobblemon.saultsc.team_preview.mixins",
   "compatibilityLevel": "JAVA_21",
-  "mixins": [],
+  "mixins": [
+    "BattleMoveTimerMixin"
+  ],
   "client": [
-    "BattleScreenMixin"
+    "BattleScreenMixin",
+    "BattleGUIMixin"
   ],
   "injectors": {
     "defaultRequire": 1

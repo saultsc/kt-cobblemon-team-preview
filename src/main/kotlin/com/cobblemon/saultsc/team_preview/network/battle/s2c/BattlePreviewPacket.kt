@@ -6,6 +6,7 @@ import com.cobblemon.saultsc.team_preview.TeamPreview
 import net.minecraft.network.RegistryByteBuf
 import net.minecraft.network.codec.PacketCodec
 import net.minecraft.network.packet.CustomPayload
+import net.minecraft.util.Identifier
 import java.util.*
 
 data class BattlePreviewPacket(
@@ -20,7 +21,7 @@ data class BattlePreviewPacket(
 
   companion object {
     val ID: CustomPayload.Id<BattlePreviewPacket> =
-      CustomPayload.Id(TeamPreview.Companion.TEAM_PREVIEW_PACKET_ID)
+      CustomPayload.Id(Identifier.of(TeamPreview.MODID, "battle_preview"))
 
     val CODEC: PacketCodec<RegistryByteBuf, BattlePreviewPacket> = PacketCodec.of(
       { packet, buf -> write(buf, packet) },

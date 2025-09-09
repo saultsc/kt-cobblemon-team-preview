@@ -7,9 +7,9 @@ import com.cobblemon.mod.common.battles.BattleBuilder
 import com.cobblemon.mod.common.battles.BattleFormat
 import com.cobblemon.mod.common.battles.BattleRegistry
 import com.cobblemon.mod.common.battles.BattleSide
-import com.cobblemon.mod.common.battles.BattleStartResult
 import com.cobblemon.mod.common.battles.actor.PlayerBattleActor
 import com.cobblemon.saultsc.team_preview.network.battle.s2c.BattleTimerUpdatePacket
+import com.cobblemon.saultsc.team_preview.server.BattleMoveTimerManager
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.server.network.ServerPlayerEntity
 import java.util.*
@@ -179,6 +179,13 @@ class BattlePreviewManager {
       session.battleFormat,
       BattleSide(actor1),
       BattleSide(actor2)
+    )
+
+    // Start move timers for the battle
+    BattleMoveTimerManager.INSTANCE.startBattleMoveTimer(
+      session.battleId,
+      session.player1,
+      session.player2
     )
 
     endBattle(session)

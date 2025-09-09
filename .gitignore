@@ -51,3 +51,6 @@ run/
 ### Build Directories ###
 build/
 !**/src/main/**/build/
+
+
+.claude/settings.local.json
