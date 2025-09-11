@@ -1,4 +1,4 @@
-# Cobblemon Team Preview
+# Cobblemon: Battle Showdown
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.1-green.svg)](https://www.minecraft.net/)
