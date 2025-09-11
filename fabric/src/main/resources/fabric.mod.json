@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "battle_showdown",
+  "version": "${version}",
+  "name": "Cobblemon: Battle Showdown",
+  "description": "Pasture block can now be used as a utility block that gives Pokémon jobs!",
+  "authors": [
+    "saultsc"
+  ],
+  "contact": {
+    "issues": "https://github.com/saultsc/battle_showdown/issues",
+    "sources": "https://github.com/saultsc/battle_showdown"
+  },
+  "license": "MPL-2.0",
+  "icon": "assets/cobbleworkers/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      {
+        "value": "saultsc.battle_showdown.fabric.BattleShowdownFabric",
+        "adapter": "kotlin"
+      }
+    ],
+    "client": [
+      {
+        "value": "saultsc.battle_showdown.fabric.client.BattleShowdownFabricClient",
+        "adapter": "kotlin"
+      }
+    ]
+  },
+  "mixins": [
+    "battle_showdown.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.14",
+    "fabric-language-kotlin": "*",
+    "minecraft": "~1.21.1",
+    "java": ">=21"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}
